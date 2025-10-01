@@ -1,0 +1,12 @@
+### Register a new Admin User
+# This request creates the first admin user in the database.
+# Change the username, password, and full_name as needed.
+
+POST http://localhost:3001/api/auth/register-admin
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "password": "123456",
+    "full_name": "مدیر کل سیستم"
+}
