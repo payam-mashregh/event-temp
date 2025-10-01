@@ -1,0 +1,194 @@
+// frontend/pages/manage/events/[slug]/registration.js
+import { useState } from 'react';
+import Head from 'next/head';
+import ManagementLayout from '../../../../components/ManagementLayout';
+import { verifyTokenAndGetUser } from '../../../../lib/auth';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { PlusCircleIcon, TrashIcon, Bars3Icon } from '@heroicons/react/24/solid';
+import { nanoid } from 'nanoid';
+
+// کامپوننت داخلی برای ویرایش یک فیلد
+const FieldEditor = ({ field, onUpdate, onRemove }) => {
+    return (
+        <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
+            <input 
+                type="text"
+                value={field.label}
+                onChange={(e) => onUpdate(field.id, { ...field, label: e.target.value })}
+                placeholder="عنوان فیلد (مثال: کد ملی)"
+                className="w-full font-bold input-style"
+            />
+            <div className="flex items-center gap-4">
+                <select 
+                    value={field.fieldType} 
+                    onChange={(e) => onUpdate(field.id, { ...field, fieldType: e.target.value })}
+                    className="input-style text-sm"
+                >
+                    <option value="text">متن کوتاه</option>
+                    <option value="email">ایمیل</option>
+                    <option value="number">عدد</option>
+                    <option value="tel">تلفن</option>
+                </select>
+                <div className="flex items-center gap-2">
+                    <input 
+                        type="checkbox" 
+                        id={`required-${field.id}`} 
+                        checked={field.isRequired}
+                        onChange={(e) => onUpdate(field.id, { ...field, isRequired: e.target.checked })}
+                    />
+                    <label htmlFor={`required-${field.id}`} className="text-sm font-medium">الزامی</label>
+                </div>
+                <button onClick={() => onRemove(field.id)} className="text-danger ml-auto">
+                    <TrashIcon className="w-5 h-5" />
+                </button>
+            </div>
+        </div>
+    );
+};
+
+function ManageRegistrationFormPage({ user, event, initialForm }) {
+    const [formTitle, setFormTitle] = useState(initialForm?.title || `فرم ثبت نام: ${event.name}`);
+    const [formDescription, setFormDescription] = useState(initialForm?.description || 'لطفاً فیلدهای مورد نیاز برای ثبت‌نام را طراحی کنید.');
+    const [fields, setFields] = useState(initialForm?.fields?.map(f => ({...f, id: nanoid()})) || []);
+    const [isSaving, setIsSaving] = useState(false);
+    const [message, setMessage] = useState('');
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const addField = () => {
+        const newField = {
+            id: nanoid(),
+            label: 'فیلد جدید',
+            fieldType: 'text',
+            isRequired: true,
+            order: fields.length
+        };
+        setFields([...fields, newField]);
+    };
+
+    const updateField = (id, updatedField) => {
+        setFields(fields.map(f => f.id === id ? updatedField : f));
+    };
+    
+    const removeField = (id) => {
+        setFields(fields.filter(f => f.id !== id));
+    };
+
+    const handleOnDragEnd = (result) => {
+        if (!result.destination) return;
+        const items = Array.from(fields);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+        
+        const updatedItems = items.map((item, index) => ({ ...item, order: index }));
+        setFields(updatedItems);
+    };
+
+    const handleSaveForm = async () => {
+        setIsSaving(true);
+        setMessage('');
+        const token = user.token;
+
+        const res = await fetch(`${apiUrl}/forms/event/${event.id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ title: formTitle, description: formDescription, fields: fields })
+        });
+
+        if (res.ok) {
+            setMessage('فرم با موفقیت ذخیره شد.');
+        } else {
+            setMessage('خطا در ذخیره فرم.');
+        }
+        setIsSaving(false);
+    };
+
+    return (
+        <ManagementLayout user={user} event={event}>
+            <Head><title>{`مدیریت فرم ثبت‌نام: ${event.name}`}</title></Head>
+
+            <div className="border-b pb-4 mb-8 flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-extrabold text-dark">فرم‌ساز ثبت‌نام رویداد</h1>
+                    <p className="text-secondary mt-1">فیلدهای فرم ثبت‌نام رویداد خود را ایجاد و مدیریت کنید.</p>
+                </div>
+                <button onClick={handleSaveForm} disabled={isSaving} className="bg-success text-white font-bold px-6 py-2.5 rounded-lg hover:bg-green-700 transition-colors text-sm shadow disabled:bg-gray-400">
+                    {isSaving ? 'در حال ذخیره...' : 'ذخیره فرم'}
+                </button>
+            </div>
+
+            <div className="max-w-3xl mx-auto">
+                <div className="bg-white p-6 rounded-xl shadow-md border">
+                    <input 
+                        type="text"
+                        value={formTitle}
+                        onChange={(e) => setFormTitle(e.target.value)}
+                        className="text-2xl font-bold w-full border-0 border-b-2 border-gray-200 focus:ring-0 focus:border-primary mb-2 p-2"
+                    />
+                     <textarea
+                        value={formDescription}
+                        onChange={(e) => setFormDescription(e.target.value)}
+                        placeholder="توضیحات فرم..."
+                        rows="2"
+                        className="w-full text-secondary border-0 focus:ring-0 mb-6 p-2"
+                    />
+                    <DragDropContext onDragEnd={handleOnDragEnd}>
+                        <Droppable droppableId="fields">
+                            {(provided) => (
+                                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+                                    {fields.map((field, index) => (
+                                        <Draggable key={field.id} draggableId={field.id.toString()} index={index}>
+                                            {(provided) => (
+                                                <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="flex items-center gap-3">
+                                                    <Bars3Icon className="w-6 h-6 text-gray-400 cursor-grab" />
+                                                    <div className="flex-grow">
+                                                        <FieldEditor field={field} onUpdate={updateField} onRemove={removeField} />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </Draggable>
+                                    ))}
+                                    {provided.placeholder}
+                                </div>
+                            )}
+                        </Droppable>
+                    </DragDropContext>
+
+                    <button onClick={addField} className="mt-6 flex items-center gap-2 text-primary font-bold hover:underline">
+                        <PlusCircleIcon className="w-6 h-6" />
+                        افزودن فیلد جدید
+                    </button>
+                </div>
+                {message && <p className={`text-center mt-4 font-semibold ${message.includes('خطا') ? 'text-danger' : 'text-success'}`}>{message}</p>}
+            </div>
+             <style jsx>{`.input-style { display: block; width: 100%; border-radius: 0.5rem; border: 1px solid #d1d5db; padding: 0.5rem; }`}</style>
+        </ManagementLayout>
+    );
+}
+
+export async function getServerSideProps(context) {
+    const user = verifyTokenAndGetUser(context.req);
+    if (!user) {
+        return { redirect: { destination: '/login', permanent: false } };
+    }
+
+    const { slug } = context.params;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    try {
+        const eventRes = await fetch(`${apiUrl}/events`);
+        const allEvents = await eventRes.json();
+        const event = allEvents.find(e => e.slug === slug);
+
+        if (!event) {
+            return { notFound: true };
+        }
+        
+        const formRes = await fetch(`${apiUrl}/forms/event/${event.id}`);
+        const initialForm = formRes.ok ? await formRes.json() : null;
+
+        return { props: { user, event, initialForm } };
+    } catch (error) {
+        return { notFound: true };
+    }
+}
+
+export default ManageRegistrationFormPage;

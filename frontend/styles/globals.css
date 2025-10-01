@@ -1,0 +1,118 @@
+/* frontend/styles/globals.css */
+@import 'swiper/css';
+@import 'swiper/css/navigation';
+@import 'swiper/css/pagination';
+@import 'swiper/css/autoplay';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    @font-face {
+        font-family: 'Vazirmatn';
+        src: url('/fonts/Vazirmatn-Regular.woff2') format('woff2');
+        font-weight: 400;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Vazirmatn';
+        src: url('/fonts/Vazirmatn-Medium.woff2') format('woff2');
+        font-weight: 500;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Vazirmatn';
+        src: url('/fonts/Vazirmatn-SemiBold.woff2') format('woff2');
+        font-weight: 600;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Vazirmatn';
+        src: url('/fonts/Vazirmatn-Bold.woff2') format('woff2');
+        font-weight: 700;
+        font-display: swap;
+    }
+    @font-face {
+        font-family: 'Vazirmatn';
+        src: url('/fonts/Vazirmatn-ExtraBold.woff2') format('woff2');
+        font-weight: 800;
+        font-display: swap;
+    }
+    html {
+        scroll-behavior: smooth;
+    }
+    body {
+        @apply bg-light text-dark font-sans;
+        direction: rtl;
+    }
+}
+
+/* Custom Swiper Styles */
+.swiper-button-next, .swiper-button-prev {
+    color: #0D6EFD !important;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(4px);
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 9999px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.2s ease-in-out;
+}
+
+.swiper-button-next:hover, .swiper-button-prev:hover {
+    background-color: white;
+    transform: scale(1.1);
+}
+
+.swiper-button-next:after, .swiper-button-prev:after {
+    font-size: 18px !important;
+    font-weight: 800;
+}
+.swiper-pagination-bullet {
+    background: #aab2bb !important;
+    width: 10px !important;
+    height: 10px !important;
+    opacity: 0.8;
+}
+.swiper-pagination-bullet-active {
+    background: #0D6EFD !important;
+    opacity: 1;
+}
+
+/* ... (تمام کدهای فعلی فایل globals.css) ... */
+
+/* --- START: Custom Fixes for react-form-builder2 --- */
+/* This code fixes layout issues caused by conflicts between Bootstrap and Tailwind */
+
+/* Fixes the toolbar position to be on the right */
+.react-form-builder .form-builder-toolbar {
+    position: fixed !important;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 300px;
+    background: #f8f9fa;
+    padding: 1rem;
+    overflow-y: auto;
+    z-index: 100;
+}
+
+/* Adjusts the main content area to make space for the toolbar */
+.react-form-builder .form-builder-form {
+    padding-right: 320px !important; /* 300px for toolbar + 20px margin */
+    padding-left: 20px !important;
+}
+
+/* Ensures the drop area has a minimum height to accept drops */
+.react-form-builder .rfb-item-container.is-empty {
+    min-height: 200px !important;
+    border-color: #0d6efd !important;
+}
+
+/* General style overrides for better integration */
+.react-form-builder {
+    font-family: 'Vazirmatn', sans-serif !important;
+}
+
+/* --- END: Custom Fixes for react-form-builder2 --- */
